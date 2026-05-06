@@ -320,7 +320,6 @@
     margin: 10px 0;
   }
 
-  /* Explicit track styling so the gradient shows on all browsers */
   input[type="range"]::-webkit-slider-runnable-track {
     height: 8px;
     border-radius: 4px;
@@ -526,7 +525,6 @@
   .tx-amount.neg { color: var(--red); }
   .tx-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
-  /* Larger touch targets for edit/delete — 36x36 minimum */
   .btn-mini {
     width: 36px; height: 36px;
     border-radius: 8px;
@@ -588,7 +586,7 @@
 
   .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  /* MODAL — bottom sheet, scrollable for small screens */
+  /* MODAL */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -619,7 +617,6 @@
     transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
   }
 
-  /* Drag handle visual cue */
   .modal::before {
     content: '';
     display: block;
@@ -908,7 +905,7 @@ function calc() {
 
 function calcMonthsElapsed() {
   if (state.income.length === 0) return 0;
-  const dates = state.income.map(x => new Date(x.date));
+  const dates = state.income.map(x => parseLocalDate(x.date));
   const earliest = new Date(Math.min(...dates));
   const now = new Date();
   const months = (now.getFullYear() - earliest.getFullYear()) * 12 + (now.getMonth() - earliest.getMonth()) + 1;
@@ -997,8 +994,15 @@ function setEl(id, val) {
   if (el) el.textContent = val;
 }
 
+// Parse a YYYY-MM-DD string as LOCAL midnight, not UTC midnight.
+// new Date("2026-05-05") is UTC and shifts back a day in negative-offset zones.
+function parseLocalDate(d) {
+  var parts = d.split('T')[0].split('-');
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+
 function fmtDate(d) {
-  return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function catColor(cat) {
@@ -1012,7 +1016,7 @@ function renderLogRecent() {
   let all = [];
   state.income.forEach(x => all.push({...x, type:'income'}));
   state.expenses.forEach(x => all.push({...x, type:'expense'}));
-  all.sort((a,b) => new Date(b.date) - new Date(a.date));
+  all.sort((a,b) => parseLocalDate(b.date) - parseLocalDate(a.date));
   const list = all.slice(0, 12);
   if (!list.length) { el.innerHTML = '<div class="empty"><span class="icon">📋</span>No transactions yet</div>'; return; }
   el.innerHTML = list.map(x => {
